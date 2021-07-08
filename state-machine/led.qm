@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="5.0.1" links="0">
+ <framework name="qpc"/>
+ <package name="base" stereotype="0x00">
+  <class name="qm_led" superclass="qpc::QMActive">
+   <attribute name="timer" type="QTimeEvt" visibility="0x00" properties="0x00"/>
+   <statechart properties="0x01">
+    <initial target="../2">
+     <action>QActive_subscribe((QActive *)me, POWER_START_SIG);
+</action>
+     <initial_glyph conn="16,10,5,0,6,4">
+      <action box="0,-2,10,2"/>
+     </initial_glyph>
+    </initial>
+    <state name="start">
+     <entry>LOG(&quot;led active&quot;);
+
+QTimeEvt_armX(&amp;me-&gt;timer,  QF_TICKS_PER_SEC, QF_TICKS_PER_SEC);</entry>
+     <initial target="../1">
+      <initial_glyph conn="47,23,5,0,5,2">
+       <action box="0,-2,10,2"/>
+      </initial_glyph>
+     </initial>
+     <state name="on">
+      <entry>
+LOG(&quot;led on&quot;);
+
+led_switch(true);
+
+//adc_get_value();
+
+//adc_convert();</entry>
+      <tran trig="LED_TIMEOUT" target="../../2">
+       <tran_glyph conn="46,31,3,3,17">
+        <action box="0,-2,10,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="46,25,12,16">
+       <entry box="1,2,6,2"/>
+      </state_glyph>
+     </state>
+     <state name="off">
+      <entry>
+LOG(&quot;led off&quot;);
+
+led_switch(false);</entry>
+      <tran trig="LED_TIMEOUT" target="../../1">
+       <tran_glyph conn="75,35,1,1,-17">
+        <action box="-11,-2,10,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="63,25,12,16">
+       <entry box="1,2,6,2"/>
+      </state_glyph>
+     </state>
+     <state_glyph node="38,14,42,60">
+      <entry box="1,2,6,2"/>
+     </state_glyph>
+    </state>
+    <state name="init">
+     <tran trig="POWER_START" target="../../1">
+      <tran_glyph conn="14,22,3,3,24">
+       <action box="0,-2,11,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="14,14,16,22"/>
+    </state>
+    <state_diagram size="121,75"/>
+   </statechart>
+  </class>
+  <attribute name="ao_qm_led" type="QActive * const" visibility="0x00" properties="0x00"/>
+  <operation name="qm_led_ctor" type="void" visibility="0x00" properties="0x00">
+   <code>qm_led *me = &amp;l_qm_led;
+QMActive_ctor(&amp;me-&gt;super, Q_STATE_CAST(&amp;qm_led_initial));
+
+QTimeEvt_ctorX (&amp;me-&gt;timer, &amp;me-&gt;super, LED_TIMEOUT_SIG, 0U);
+</code>
+  </operation>
+ </package>
+ <directory name="../">
+  <directory name="include">
+   <directory name="qm">
+    <file name="qm_led.h">
+     <text>#ifndef __QM_LED_H__
+#define __QM_LED_H__
+
+
+#include &quot;qm/qm_common.h&quot;
+
+$declare(base::ao_qm_led)
+
+$declare(base::qm_led_ctor)
+
+#endif
+</text>
+    </file>
+   </directory>
+  </directory>
+  <directory name="src">
+   <directory name="qm">
+    <file name="qm_led.c">
+     <text>#include &quot;qm/qm_led.h&quot;
+#include &quot;base/base.h&quot;
+
+$declare(base::qm_led)
+
+
+static qm_led l_qm_led;
+
+QActive* const ao_qm_led = (QActive*)&amp;l_qm_led;
+
+$define(base::qm_led_ctor)
+$define(base::qm_led)
+</text>
+    </file>
+   </directory>
+  </directory>
+ </directory>
+</model>

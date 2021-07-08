@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="5.0.1" links="0">
+ <framework name="qpc"/>
+ <package name="base" stereotype="0x00">
+  <class name="qm_power" superclass="qpc::QMActive">
+   <attribute name="timer" type="QTimeEvt" visibility="0x00" properties="0x00"/>
+   <statechart properties="0x01">
+    <initial target="../2">
+     <action>QActive_subscribe((QActive *)me, POWER_ON_SIG);</action>
+     <initial_glyph conn="12,10,5,0,8,4">
+      <action box="0,-2,10,2"/>
+     </initial_glyph>
+    </initial>
+    <state name="start">
+     <entry>LOG(&quot;power start&quot;);
+
+QTimeEvt_armX(&amp;me-&gt;timer,  QF_TICKS_PER_SEC, QF_TICKS_PER_SEC);
+
+//notify others actors to start
+QEvt *pe = Q_NEW(QEvt, POWER_START_SIG);
+QF_PUBLISH((QEvt*)pe, NULL);
+</entry>
+     <state_glyph node="38,14,44,60">
+      <entry box="1,2,6,2"/>
+     </state_glyph>
+    </state>
+    <state name="init">
+     <entry>
+QEvt *pe = Q_NEW(QEvt, POWER_ON_SIG);
+QF_PUBLISH((QEvt*)pe, NULL);
+</entry>
+     <tran trig="POWER_ON" target="../../1">
+      <tran_glyph conn="12,24,3,3,26">
+       <action box="0,-2,13,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="12,14,16,22">
+      <entry box="1,2,6,2"/>
+     </state_glyph>
+    </state>
+    <state_diagram size="123,75"/>
+   </statechart>
+  </class>
+  <attribute name="ao_qm_power" type="QActive * const" visibility="0x00" properties="0x00"/>
+  <operation name="qm_power_ctor" type="void" visibility="0x00" properties="0x00">
+   <code>qm_power *me = &amp;l_qm_power;
+
+QMActive_ctor(&amp;me-&gt;super, Q_STATE_CAST(&amp;qm_power_initial));
+
+QTimeEvt_ctorX (&amp;me-&gt;timer, &amp;me-&gt;super, POWER_TIMEOUT_SIG, 0U);
+</code>
+  </operation>
+ </package>
+ <directory name="../">
+  <directory name="include">
+   <directory name="qm">
+    <file name="qm.h">
+     <text>#ifndef __QM_H__
+#define __QM_H__
+
+#include &quot;qm/qm_signals.h&quot;
+#include &quot;qm/qm_events.h&quot;
+#include &quot;qm/qm_led.h&quot;
+#include &quot;qm/qm_power.h&quot;
+
+#endif</text>
+    </file>
+    <file name="qm_common.h">
+     <text>#ifndef __QM_COMMON_H__
+#define __QM_COMMON_H__
+
+#include &quot;qm/qm_signals.h&quot;
+#include &quot;qm/qm_events.h&quot;
+
+#include &quot;base/base.h&quot;
+
+#endif
+</text>
+    </file>
+    <file name="qm_signals.h">
+     <text>#ifndef __QM_SIGNALS_H__
+#define __QM_SIGNALS_H__
+
+
+#include &quot;qpc.h&quot;
+
+enum qm_qpc_signals
+{
+    /*faba signal start value*/
+    START_SIG = Q_USER_SIG,
+
+    /*led sig*/
+    LED_TIMEOUT_SIG,
+
+    /*sys*/
+    POWER_TIMEOUT_SIG,
+    POWER_ON_SIG,
+    POWER_START_SIG,
+
+    /*uart*/
+    UART2_RX_SIG,
+
+    /*stream*/
+    STREAM_TX_DATA_SIG,
+    STREAM_RX_CMD_MSG_SIG,
+    STREAM_RX_ACK_MSG_SIG,
+
+    MAX_SIG,
+};
+
+#endif</text>
+    </file>
+    <file name="qm_events.h">
+     <text>#ifndef __QM_EVENTS_H__
+#define __QM_EVENTS_H__
+
+#include &quot;qpc.h&quot;
+
+
+typedef struct key_evt_t 
+{
+    QEvt super;
+    uint8_t id;
+    uint8_t state;
+} key_evt_t;
+
+typedef struct uart_evt_t 
+{
+    QEvt super;
+    uint8_t byte; 
+} uart_evt_t;
+
+
+
+#endif</text>
+    </file>
+    <file name="qm_power.h">
+     <text>#ifndef __QM_POWER_H__
+#define __QM_POWER_H__
+
+
+#include &quot;qm/qm_common.h&quot;
+
+$declare(base::ao_qm_power)
+
+$declare(base::qm_power_ctor)
+
+#endif
+
+</text>
+    </file>
+   </directory>
+  </directory>
+  <directory name="src">
+   <directory name="qm">
+    <file name="qm_main.c">
+     <text>#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+
+#include &quot;base/base.h&quot;
+#include &quot;qm/qm.h&quot;
+
+/* Local-scope objects -----------------------------------------------------*/
+Q_DEFINE_THIS_FILE
+
+static QEvt const *l_qm_power_QSto[10];
+static QEvt const *l_qm_led_QSto[10];
+
+
+static QF_MPOOL_EL(QEvt)       l_small_pool[100];
+static QF_MPOOL_EL(key_evt_t)  l_middle_pool[100];
+
+static QSubscrList    l_subscrSto[MAX_SIG];
+/*..........................................................................*/
+int main() 
+{
+    QF_init();
+
+    qm_power_ctor();
+    qm_led_ctor();
+
+
+    /* initialize the event pools... */
+    QF_poolInit(l_small_pool,   sizeof(l_small_pool),   sizeof(l_small_pool[0]));
+    QF_poolInit(l_middle_pool,  sizeof(l_middle_pool),  sizeof(l_middle_pool[0]));
+
+    /* init publish-subscribe */
+    QF_psInit(l_subscrSto, Q_DIM(l_subscrSto));
+
+    QACTIVE_START(ao_qm_power,
+                  1U,
+                  l_qm_power_QSto, Q_DIM(l_qm_power_QSto),
+                  (void *)0, 0U, 
+                  (QEvt *)0);
+
+    QACTIVE_START(ao_qm_led,
+                  2U,
+                  l_qm_led_QSto, Q_DIM(l_qm_led_QSto),
+                  (void *)0, 0U, 
+                  (QEvt *)0);
+
+    QF_run();                              /* run the QF application */
+
+    return 0;
+}
+
+
+</text>
+    </file>
+    <file name="qm_power.c">
+     <text>#include &quot;qm/qm_power.h&quot;
+#include &quot;base/base.h&quot;
+
+$declare(base::qm_power)
+
+static qm_power l_qm_power;
+
+QActive* const ao_qm_power = (QActive*)&amp;l_qm_power;
+
+$define(base::qm_power_ctor)
+
+$define(base::qm_power)
+</text>
+    </file>
+   </directory>
+  </directory>
+ </directory>
+</model>
