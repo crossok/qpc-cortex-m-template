@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<model version="5.0.1" links="0">
+<model version="5.1.1" links="0">
  <framework name="qpc"/>
  <package name="base" stereotype="0x00">
   <class name="qm_power" superclass="qpc::QMActive">
@@ -47,7 +47,7 @@ QF_PUBLISH((QEvt*)pe, NULL);
 
 QMActive_ctor(&amp;me-&gt;super, Q_STATE_CAST(&amp;qm_power_initial));
 
-QTimeEvt_ctorX (&amp;me-&gt;timer, &amp;me-&gt;super, POWER_TIMEOUT_SIG, 0U);
+QTimeEvt_ctorX (&amp;me-&gt;timer, (QActive *)me, POWER_TIMEOUT_SIG, 0U);
 </code>
   </operation>
  </package>

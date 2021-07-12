@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<model version="5.0.1" links="0">
+<model version="5.1.1" links="0">
  <framework name="qpc"/>
  <package name="base" stereotype="0x00">
   <class name="qm_led" superclass="qpc::QMActive">
@@ -73,7 +73,7 @@ led_switch(false);</entry>
    <code>qm_led *me = &amp;l_qm_led;
 QMActive_ctor(&amp;me-&gt;super, Q_STATE_CAST(&amp;qm_led_initial));
 
-QTimeEvt_ctorX (&amp;me-&gt;timer, &amp;me-&gt;super, LED_TIMEOUT_SIG, 0U);
+QTimeEvt_ctorX (&amp;me-&gt;timer, (QActive *)me, LED_TIMEOUT_SIG, 0U);
 </code>
   </operation>
  </package>
